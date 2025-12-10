@@ -181,4 +181,37 @@ class ProxyRotationMiddleware:
     def process_response(self, request, response, spider):
         return response
 
+class HeaderRoatationMiddleware:
+    
+    def __init__(self, user_agents):
+        self.user_agents = user_agents or [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+
+        ]
+
+        logger.deug(f"HeaderRoatationMiddleware {len(self.user_agents)} user agents.")
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        user_agents = crawler.settings.getlist("USER_AGENTS",[])
+        return cls(user_agents)
+    
+    def process_request(self, request, spider):
+        user_agent = random.choice(self.user_agents)
+        request.headers['User-Agent'] = user_agent
+        request.headers['Accept-Language'] = 'en-US,en;q=0.9'
+        request.headers['Accept-Encoding'] = 'gzip, deflate, br'
+        request.headers['Connection'] = 'keep-alive'
+        request.headers['Upgrade-Insecure-Requests'] = '1'
+        logger.info(f'HeaderRoatationMiddleware: Using User-Agent {user_agent}')
+        # for modern antibot measures
+        request.headers['sec-ch-ua'] = '"Not_A Brand";v="8", "Chromium";v="120"'
+        request.headers['sec-ch-ua-mobile'] = '?0'
+        request.headers['sec-ch-ua-platform'] = '"Windows"'
+        request.headers['Sec-Fetch-Dest'] = 'document'
+        request.headers['Sec-Fetch-Mode'] = 'navigate'
+        request.headers['Sec-Fetch-Site'] = 'none'
+        request.headers['Sec-Fetch-User'] = '?1'
+
+
     

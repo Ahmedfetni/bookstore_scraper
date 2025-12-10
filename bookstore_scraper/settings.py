@@ -86,20 +86,28 @@ DOWNLOAD_DELAY = 1
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
 
+# proxies that I got from free websites just to test 
+# and I commented them out to avoid there issues like slowness and being unstable
 PROXY_LIST = [
-    "192.168.123.93:39842",
-    "192.168.47.126:6166",
-    "192.168.119.71:46294"
-    "192.168.123.93:39842",
-    "101.255.208.62:8080",
-    "101.255.210.1:1111",
-    "101.255.211.42:1111",
-    "101.255.211.54:8082",
-    "101.255.32.42:8080",
-    "101.255.64.241:8080",
-    "101.255.69.26:8080",
-    "101.50.101.91:80",
-    "192.168.123.93:39842",
-    "216.205.52.0",
-    "216.205.52.106"
+    #"192.168.123.93:39842",
+    #"192.168.47.126:6166",
+    #"192.168.119.71:46294"
+    #"192.168.123.93:39842",
+    #"101.255.208.62:8080",
+    #"101.255.210.1:1111",
+    #"101.255.211.42:1111",
+    #"101.255.211.54:8082",
+    #"101.255.32.42:8080",
+    #"101.255.64.241:8080",
+    #"101.255.69.26:8080",
+    #"101.50.101.91:80",
+    #"192.168.123.93:39842",
+    #"216.205.52.0",
+    #"216.205.52.106"
+]
+
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 ]
