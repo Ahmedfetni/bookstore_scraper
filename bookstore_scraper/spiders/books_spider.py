@@ -3,7 +3,15 @@ import re
 from scrapy.http import Request
 from bookstore_scraper.items import BookItem 
 
+
+
 class BookSpider(scrapy.Spider):
+
+    custom_settings = {
+        'DOWNLOADER_MIDDLEWARES': {
+            'bookstore_scraper.middlewares.ProxyRotationMiddleware': 350,        
+            }
+    }
     name = 'books'
     allowed_dimains = ['books.toscrape.com'] 
     start_urls = ["https://books.toscrape.com/"]

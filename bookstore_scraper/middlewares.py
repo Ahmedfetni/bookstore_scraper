@@ -1,9 +1,6 @@
-# Define here the models for your spider middleware
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
 from scrapy import signals
+import logging
+import random
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
@@ -98,3 +95,33 @@ class BookstoreScraperDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+# a new middleware to rotate proxies 
+
+logger = logging.getLogger(__name__)
+
+
+class ProxyRotationMiddleware:
+
+    # the argement proxylist source is the from_crawler class method 
+    # like crawler.settings.getList("PROXY_LIST") 
+    def __init__(self, proxy_list):
+        self.proxy_list = proxy_list
+        if proxy_list:
+            logger.info(f'ProxyRotationMiddleware number of proxies {len(proxy_list)}')
+        else:
+            logger.info(f'ProxyRotationMiddleware failed tp load proxies')
+    
+    @classmethod
+    def from_crawler(cls, crawler):
+        proxy_list = crawler.settings.getlis("PROXY_LIST",[])
+        return cls(proxy_list)
+    
+    # send request throw a proxy 
+    def process__request(self, request, spider):
+        if self.proxy_list :
+            proxy = random.choice(self.proxy_list)
+            request.meta['proxy'] = proxy
+            logger.info(f'Using proxy {proxy} for {request.url}')
+    
