@@ -4,7 +4,7 @@ import random
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-
+import requests
 
 class BookstoreScraperSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,27 +101,84 @@ class BookstoreScraperDownloaderMiddleware:
 
 logger = logging.getLogger(__name__)
 
+class ValidatingProxyMiddleware:
+    def __init__(self, proxy_list, test_url="https://example.com",test_timeout=2):
+        self.original_proxies = list(proxy_list)
+        self.proxies = list(proxy_list)
+        self.test_url = test_url
+        self.test_timeout = test_timeout
+        logger.info(f"ValidatingProxyMiddleware started: {len(self.proxies)} proxies")
 
-class ProxyRotationMiddleware:
-
-    # the argement proxylist source is the from_crawler class method 
-    # like crawler.settings.getList("PROXY_LIST") 
-    def __init__(self, proxy_list):
-        self.proxy_list = proxy_list
-        if proxy_list:
-            logger.info(f'ProxyRotationMiddleware number of proxies {len(proxy_list)}')
-        else:
-            logger.info(f'ProxyRotationMiddleware failed tp load proxies')
-    
     @classmethod
     def from_crawler(cls, crawler):
         proxy_list = crawler.settings.getlist("PROXY_LIST",[])
-        return cls(proxy_list)
+        middleware = cls(proxy_list)
+        # so when the spider opens we launch the middleware validation
+        crawler.signals.connect(middleware.spider_opened, signal=signals.spider_opened)
+        return middleware
+    
+    def process_request(self, request, spider):
+        if not self.proxies:
+            logger.warning("failed to load proxies list of proxies is possibly empty")
+            return
+        
+        proxy = random.choice(self.proxies)
+        request.meta['proxy'] = f"http://{proxy}"
+        request.meta.setdefault('proxy_retry', 0)
+        logger.info(f'Testing proxy {proxy} for {request.url}')
+    
+    # letting normal responses pass through
+    def process_response(self, request, response, spider):
+        return response
+    
+    # handling the case where the request fails due to the proxy not working
+    def process_exception(self, request, exception, spider):
+        proxy = request.meta.get('proxy')
+        if proxy:
+            proxy_address = proxy.replace("http://","")
+            retry_count = request.meta.get('proxy_retry',0)
+            if retry_count <= 2 :
+                logger.warning(f"Proxy {proxy_address} failed with exception {exception}. Retrying ({retry_count+1}/2)")
+                new_req = request.copy()
+                new_req.meta['proxy_retry'] = retry_count + 1
+                return new_req
+            else:
+                logger.debug(f"Proxy {proxy_address} removed from list after 2 failed attempts.")
+                if proxy_address in self.proxies:
+                    self.proxies.remove(proxy_address)
+        return None
+
+    # call to test proxiest at the start (upfront)
+    def spider_opened(self, spider):
+        valid = []
+        # go throuw every proxy given 
+        for proxy in self.original_proxies:
+            try:
+                response = requests.get(self.test_url, proxies={"http":f"http://{proxy}","https":f"http://{proxy}"}, timeout=self.test_timeout)
+                if response.status_code == 200:
+                    valid.append(proxy)
+                    logger.info(f"Proxy {proxy} is valid.")
+                else:
+                    logger.warning(f"Proxy {proxy} returned status code {response.status_code}.")
+            except Exception as e:
+                logger.warning(f"Proxy {proxy} failed validation with exception: {e}")
+        spider.proxies = valid
+        logger.info(f"Validation complete. {len(self.proxies)} valid proxies found.")
+
+
+class ProxyRotationMiddleware:
+
     
     # send request throw a proxy 
     def process_request(self, request, spider):
-        if self.proxy_list :
-            proxy = random.choice(self.proxy_list)
+        if spider.proxies :
+            proxy = random.choice(spider.proxies)
             request.meta['proxy'] = proxy
             logger.info(f'Using proxy {proxy} for {request.url}')
+        else:
+            logger.warning("ProxyRotationMiddleware: No proxies in use")
+    
+    def process_response(self, request, response, spider):
+        return response
+
     

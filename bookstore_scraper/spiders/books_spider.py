@@ -8,7 +8,9 @@ from bookstore_scraper.items import BookItem
 class BookSpider(scrapy.Spider):
 
     custom_settings = {
+        "ROBOTSTXT_OBEY":False,
         'DOWNLOADER_MIDDLEWARES': {
+            'bookstore_scraper.middlewares.ValidatingProxyMiddleware': 340,
             'bookstore_scraper.middlewares.ProxyRotationMiddleware': 350,        
             }
     }
