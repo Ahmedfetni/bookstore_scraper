@@ -115,11 +115,11 @@ class ProxyRotationMiddleware:
     
     @classmethod
     def from_crawler(cls, crawler):
-        proxy_list = crawler.settings.getlis("PROXY_LIST",[])
+        proxy_list = crawler.settings.getlist("PROXY_LIST",[])
         return cls(proxy_list)
     
     # send request throw a proxy 
-    def process__request(self, request, spider):
+    def process_request(self, request, spider):
         if self.proxy_list :
             proxy = random.choice(self.proxy_list)
             request.meta['proxy'] = proxy
