@@ -16,4 +16,6 @@ class BookItem(scrapy.Item):
         rating = scrapy.Field()
         image = scrapy.Field()
         number_of_reviews = scrapy.Field()
-        breadcrumb =scrapy.Field()
+        breadcrumb = scrapy.Field()
+        scraped_at = scrapy.Field()
+        

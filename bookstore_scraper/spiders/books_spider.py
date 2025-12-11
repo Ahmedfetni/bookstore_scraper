@@ -8,11 +8,16 @@ from bookstore_scraper.items import BookItem
 class BookSpider(scrapy.Spider):
 
     custom_settings = {
-        "ROBOTSTXT_OBEY":False,
+        'DATABASE_PATH': 'books.db',
+        'ROBOTSTXT_OBEY': False,
         'DOWNLOADER_MIDDLEWARES': {
             'bookstore_scraper.middlewares.ValidatingProxyMiddleware': 340,
             'bookstore_scraper.middlewares.ProxyRotationMiddleware': 350,        
-            }
+            },
+        'ITEM_PIPELINES': {
+            'bookstore_scraper.pipelines.ValidationPipeline': 100,
+            'bookstore_scraper.pipelines.DatabasePipeline': 300,
+        }
     }
     name = 'books'
     allowed_dimains = ['books.toscrape.com'] 
@@ -46,7 +51,7 @@ class BookSpider(scrapy.Spider):
         instock_string =   instock_string[1].strip()
         instock = "In stock" in instock_string
         if instock:
-            stock = re.search(r"\d+", instock_string)
+            stock = int(re.search(r"\d+", instock_string).group())
         book_descripion =  response.css('div#product_description + p::text').get()
         rating_map = {
             "One": 1,
