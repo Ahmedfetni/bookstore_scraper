@@ -1,10 +1,3 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-
-
-# useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 from scrapy import signals
 from scrapy.exceptions import DropItem
@@ -22,6 +15,10 @@ class ValidationPipeline:
         item['scraped_at'] = spider.crawler.stats.get_value('start_time').isoformat()
         if not item['stock']:
             item['stock'] = 0
+        breadcrumb = item.get('breadcrumb')
+        if isinstance(breadcrumb, list):
+            breadcrumb = " > ".join(breadcrumb) 
+        item['breadcrumb'] = breadcrumb
         
         return item
     
@@ -59,7 +56,8 @@ class DatabasePipeline:
                 rating INTEGER,
                 image TEXT,
                 number_of_reviews INTEGER,
-                breadcrumb TEXT
+                breadcrumb TEXT, 
+                scraped_at TEXT
             )
         ''')
         self.connection.commit()
@@ -76,8 +74,9 @@ class DatabasePipeline:
                 INSERT OR REPLACE INTO books (
                     url, title, upc, price, instock, stock,
                     book_description, rating, image,
-                    number_of_reviews, breadcrumb
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    number_of_reviews, breadcrumb, scraped_at
+
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 item.get('url'),
                 item.get('title'),
@@ -89,7 +88,8 @@ class DatabasePipeline:
                 item.get('rating'),
                 item.get('image'),
                 item.get('number_of_reviews'),
-                item.get('breadcrumb')
+                item.get('breadcrumb'),
+                item.get('scraped_at')
             ))
             self.connection.commit()
             spider.logger.info(f"Book stored in db: {item.get('title')}")
@@ -99,4 +99,6 @@ class DatabasePipeline:
                 spider.logger.warning("Item already exist in the database: %s" % item)
                 return item
             else:
-                raise DropItem(f"Error storing item in db: {item}")
+                spider.logger.error(f"Database pipeline Error: {e}")
+
+                raise DropItem(f'''Error storing item in db: {item} ''')
